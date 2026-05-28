@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.wms</groupId>
+        <artifactId>springboot-ai-project</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>wms-ai</artifactId>
+    <name>wms-ai</name>
+    <description>AI模块 - 需求预测、智能补货、库存优化、自然语言交互、异常检测</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.wms</groupId>
+            <artifactId>wms-model</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wms</groupId>
+            <artifactId>wms-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.wms</groupId>
+            <artifactId>wms-dao</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,145 @@
+package com.wms.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.wms.common.core.PageResult;
+import com.wms.common.exception.BusinessException;
+import com.wms.dao.mapper.WmsCustomerMapper;
+import com.wms.model.dto.CustomerDTO;
+import com.wms.model.entity.WmsCustomer;
+import com.wms.service.CustomerService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+/**
+ * 客户服务实现类
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CustomerServiceImpl implements CustomerService {
+
+    private final WmsCustomerMapper customerMapper;
+
+    /**
+     * 创建客户
+     * 
+     * 流程:
+     * 1. 检查客户编码唯一性
+     * 2. 插入数据库
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public WmsCustomer create(CustomerDTO dto) {
+        // 1. 检查客户编码唯一性
+        WmsCustomer exist = customerMapper.selectOne(
+                new LambdaQueryWrapper<WmsCustomer>()
+                        .eq(WmsCustomer::getCustomerCode, dto.getCustomerCode())
+        );
+        if (exist != null) {
+            throw new BusinessException("客户编码已存在");
+        }
+
+        // 2. 构建实体
+        WmsCustomer customer = new WmsCustomer();
+        BeanUtils.copyProperties(dto, customer);
+        customer.setStatus(1);
+
+        // 3. 插入数据库
+        customerMapper.insert(customer);
+        log.info("创建客户成功: {}", customer.getCustomerCode());
+        return customer;
+    }
+
+    /**
+     * 更新客户
+     * 
+     * 流程:
+     * 1. 检查客户是否存在
+     * 2. 检查客户编码唯一性（排除自身）
+     * 3. 更新数据库
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public WmsCustomer update(Long id, CustomerDTO dto) {
+        // 1. 检查客户是否存在
+        WmsCustomer customer = customerMapper.selectById(id);
+        if (customer == null) {
+            throw new BusinessException("客户不存在");
+        }
+
+        // 2. 检查客户编码唯一性（排除自身）
+        WmsCustomer exist = customerMapper.selectOne(
+                new LambdaQueryWrapper<WmsCustomer>()
+                        .eq(WmsCustomer::getCustomerCode, dto.getCustomerCode())
+                        .ne(WmsCustomer::getId, id)
+        );
+        if (exist != null) {
+            throw new BusinessException("客户编码已存在");
+        }
+
+        // 3. 更新数据库
+        BeanUtils.copyProperties(dto, customer);
+        customerMapper.updateById(customer);
+        log.info("更新客户成功: {}", customer.getCustomerCode());
+        return customer;
+    }
+
+    /**
+     * 删除客户
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        WmsCustomer customer = customerMapper.selectById(id);
+        if (customer == null) {
+            throw new BusinessException("客户不存在");
+        }
+        customerMapper.deleteById(id);
+        log.info("删除客户成功: {}", customer.getCustomerCode());
+    }
+
+    /**
+     * 根据ID查询客户
+     */
+    @Override
+    public WmsCustomer getById(Long id) {
+        WmsCustomer customer = customerMapper.selectById(id);
+        if (customer == null) {
+            throw new BusinessException("客户不存在");
+        }
+        return customer;
+    }
+
+    /**
+     * 分页查询客户列表
+     * 
+     * @param page    页码
+     * @param size    每页数量
+     * @param keyword 搜索关键词（匹配客户编码、名称、联系人）
+     */
+    @Override
+    public PageResult<WmsCustomer> list(int page, int size, String keyword) {
+        LambdaQueryWrapper<WmsCustomer> wrapper = new LambdaQueryWrapper<>();
+        
+        // 关键词搜索
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w
+                    .like(WmsCustomer::getCustomerCode, keyword)
+                    .or()
+                    .like(WmsCustomer::getCustomerName, keyword)
+                    .or()
+                    .like(WmsCustomer::getContactPerson, keyword)
+            );
+        }
+        
+        wrapper.orderByDesc(WmsCustomer::getGmtCreate);
+
+        Page<WmsCustomer> result = customerMapper.selectPage(new Page<>(page, size), wrapper);
+        return new PageResult<>(result.getRecords(), result.getTotal(), result.getSize(), result.getCurrent());
+    }
+}
