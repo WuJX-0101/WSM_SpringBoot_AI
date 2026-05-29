@@ -32,8 +32,9 @@ public class OrderStatsServiceImpl implements OrderStatsService {
      * 缓存：结果缓存5分钟
      */
     @Override
-    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "#startDate + ':' + #endDate")
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "'summary:' + #startDate + ':' + #endDate")
     public OrderStatsVO getStats(LocalDate startDate, LocalDate endDate) {
+        log.debug("从数据库查询订单统计数据: {} ~ {}", startDate, endDate);
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
@@ -43,9 +44,12 @@ public class OrderStatsServiceImpl implements OrderStatsService {
     /**
      * 获取每日入库统计
      * 优化：使用SQL GROUP BY替代Java Stream分组
+     * 缓存：结果缓存5分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "'dailyInbound:' + #startDate + ':' + #endDate")
     public List<Map<String, Object>> getDailyInboundStats(LocalDate startDate, LocalDate endDate) {
+        log.debug("从数据库查询每日入库统计: {} ~ {}", startDate, endDate);
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
@@ -55,9 +59,12 @@ public class OrderStatsServiceImpl implements OrderStatsService {
     /**
      * 获取每日出库统计
      * 优化：使用SQL GROUP BY替代Java Stream分组
+     * 缓存：结果缓存5分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "'dailyOutbound:' + #startDate + ':' + #endDate")
     public List<Map<String, Object>> getDailyOutboundStats(LocalDate startDate, LocalDate endDate) {
+        log.debug("从数据库查询每日出库统计: {} ~ {}", startDate, endDate);
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
@@ -67,9 +74,12 @@ public class OrderStatsServiceImpl implements OrderStatsService {
     /**
      * 获取商品入库排行
      * 优化：使用SQL JOIN + GROUP BY替代多次查询和Java分组
+     * 缓存：结果缓存5分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "'inboundRank:' + #startDate + ':' + #endDate + ':' + #limit")
     public List<Map<String, Object>> getProductInboundRank(LocalDate startDate, LocalDate endDate, int limit) {
+        log.debug("从数据库查询商品入库排行: {} ~ {}, limit={}", startDate, endDate, limit);
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
@@ -79,9 +89,12 @@ public class OrderStatsServiceImpl implements OrderStatsService {
     /**
      * 获取商品出库排行
      * 优化：使用SQL JOIN + GROUP BY替代多次查询和Java分组
+     * 缓存：结果缓存5分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "'outboundRank:' + #startDate + ':' + #endDate + ':' + #limit")
     public List<Map<String, Object>> getProductOutboundRank(LocalDate startDate, LocalDate endDate, int limit) {
+        log.debug("从数据库查询商品出库排行: {} ~ {}, limit={}", startDate, endDate, limit);
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
