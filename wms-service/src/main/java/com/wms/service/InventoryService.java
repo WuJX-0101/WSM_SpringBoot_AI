@@ -7,7 +7,6 @@ import com.wms.model.vo.InventoryLogVO;
 import com.wms.model.vo.InventoryVO;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 库存服务接口
@@ -57,12 +56,4 @@ public interface InventoryService {
      * @param warehouseId 仓库ID（可选）
      */
     PageResult<InventoryLogVO> listLog(int page, int size, Long productId, Long warehouseId);
-
-    /**
-     * 获取库存统计信息
-     * 包含：商品种类数、库存总量、库存总值
-     *
-     * @return 统计信息Map
-     */
-    Map<String, Object> getInventoryStats();
 }

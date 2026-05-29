@@ -21,7 +21,6 @@ import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -227,7 +226,6 @@ public class InventoryServiceImpl implements InventoryService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = CacheConfig.CACHE_INVENTORY_STATS, key = "'stats'")
     public void adjust(Long inventoryId, int adjustQuantity, String remark) {
         // 1. 检查库存记录是否存在
         WmsInventory inventory = inventoryMapper.selectById(inventoryId);
@@ -349,47 +347,5 @@ public class InventoryServiceImpl implements InventoryService {
 
             return vo;
         }).collect(Collectors.toList());
-    }
-
-    /**
-     * 获取库存统计信息
-     * 缓存：结果缓存5分钟
-     */
-    @Override
-    @Cacheable(value = CacheConfig.CACHE_INVENTORY_STATS, key = "'stats'")
-    public Map<String, Object> getInventoryStats() {
-        log.debug("从数据库查询库存统计信息");
-
-        // 查询所有库存
-        List<WmsInventory> inventories = inventoryMapper.selectList(
-                new LambdaQueryWrapper<WmsInventory>().eq(WmsInventory::getIsDeleted, 0)
-        );
-
-        // 商品种类数
-        long productCount = inventories.stream()
-                .map(WmsInventory::getProductId)
-                .distinct()
-                .count();
-
-        // 库存总量
-        long totalQuantity = inventories.stream()
-                .mapToLong(i -> i.getQuantity() != null ? i.getQuantity() : 0)
-                .sum();
-
-        // 库存总值
-        double totalValue = inventories.stream()
-                .mapToDouble(i -> {
-                    double quantity = i.getQuantity() != null ? i.getQuantity() : 0;
-                    double costPrice = i.getCostPrice() != null ? i.getCostPrice().doubleValue() : 0;
-                    return quantity * costPrice;
-                })
-                .sum();
-
-        Map<String, Object> stats = new java.util.LinkedHashMap<>();
-        stats.put("productCount", productCount);
-        stats.put("totalQuantity", totalQuantity);
-        stats.put("totalValue", String.format("%.2f", totalValue));
-
-        return stats;
     }
 }

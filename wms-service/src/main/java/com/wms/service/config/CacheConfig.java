@@ -31,7 +31,6 @@ public class CacheConfig {
      */
     public static final String CACHE_DASHBOARD = "dashboard";
     public static final String CACHE_ORDER_STATS = "orderStats";
-    public static final String CACHE_INVENTORY_STATS = "inventoryStats";
     public static final String CACHE_PRODUCT_LIST = "productList";
     public static final String CACHE_WAREHOUSE_LIST = "warehouseList";
 
@@ -48,8 +47,6 @@ public class CacheConfig {
                 .withCacheConfiguration(CACHE_DASHBOARD,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration(CACHE_ORDER_STATS,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration(CACHE_INVENTORY_STATS,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration(CACHE_PRODUCT_LIST,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
