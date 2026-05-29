@@ -50,22 +50,16 @@ public class CacheConfig {
                 .cacheDefaults(config)
                 // 统计数据缓存5分钟
                 .withCacheConfiguration(CACHE_DASHBOARD,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
+                        config.entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration(CACHE_ORDER_STATS,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
-                // 基础数据缓存10分钟
-                .withCacheConfiguration(CACHE_PRODUCT,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_WAREHOUSE,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_LOCATION,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_CATEGORY,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_SUPPLIER,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_CUSTOMER,
-                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                        config.entryTtl(Duration.ofMinutes(5)))
+                // 基础数据缓存10分钟（使用默认配置即可）
+                .withCacheConfiguration(CACHE_PRODUCT, config)
+                .withCacheConfiguration(CACHE_WAREHOUSE, config)
+                .withCacheConfiguration(CACHE_LOCATION, config)
+                .withCacheConfiguration(CACHE_CATEGORY, config)
+                .withCacheConfiguration(CACHE_SUPPLIER, config)
+                .withCacheConfiguration(CACHE_CUSTOMER, config)
                 .build();
     }
 }
