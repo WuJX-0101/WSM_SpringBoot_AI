@@ -3,12 +3,16 @@ package com.wms.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 订单统计VO
  */
 @Data
 @Schema(description = "订单统计信息")
-public class OrderStatsVO {
+public class OrderStatsVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "今日入库单数")
     private Long todayInbound;

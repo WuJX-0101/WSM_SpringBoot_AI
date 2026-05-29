@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -16,7 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "首页统计数据")
-public class DashboardVO {
+public class DashboardVO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "商品总数")
     private Long productCount;
@@ -53,7 +56,9 @@ public class DashboardVO {
     @NoArgsConstructor
     @AllArgsConstructor
     @Schema(description = "最近订单信息")
-    public static class RecentOrderVO {
+    public static class RecentOrderVO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "订单ID")
         private Long id;
