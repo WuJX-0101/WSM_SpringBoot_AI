@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { redirectToLogin } from './router'
 
 // 创建axios实例，使用环境变量配置baseURL
 const request = axios.create({
@@ -33,13 +34,12 @@ request.interceptors.response.use(
     // 如果返回的code不是200，说明有错误
     if (res.code !== 200) {
       ElMessage.error(res.message || '请求失败')
-      
+
       // 401: 未授权，跳转到登录页
       if (res.code === 401) {
-        localStorage.removeItem('token')
-        window.location.href = '/login'
+        redirectToLogin()
       }
-      
+
       return Promise.reject(new Error(res.message || '请求失败'))
     }
     

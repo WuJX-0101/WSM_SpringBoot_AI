@@ -63,9 +63,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
+import type { ECharts } from '@/utils/echarts'
 import PageHeader from '@/components/PageHeader.vue'
 import { listInventory } from '@/api/inventory'
+import type { Inventory } from '@/types/api'
 
 const loading = ref(false)
 
@@ -75,20 +77,21 @@ const stats = reactive({
   totalValue: '0'
 })
 
-const inventoryList = ref<any[]>([])
+const inventoryList = ref<Inventory[]>([])
 
 const warehouseChartRef = ref<HTMLElement>()
 const topChartRef = ref<HTMLElement>()
 
-let warehouseChart: echarts.ECharts | null = null
-let topChart: echarts.ECharts | null = null
+let warehouseChart: ECharts | null = null
+let topChart: ECharts | null = null
+const resizeHandlers: Array<() => void> = []
 
 const loadInventory = async () => {
   loading.value = true
   try {
     const res: any = await listInventory({ page: 1, size: 100 })
     inventoryList.value = res.data.records
-    
+
     stats.productCount = res.data.total
     stats.totalQuantity = res.data.records.reduce((sum: number, item: any) => sum + item.quantity, 0)
     stats.totalValue = res.data.records.reduce((sum: number, item: any) => sum + item.quantity * (item.costPrice || 0), 0).toFixed(2)
@@ -99,20 +102,27 @@ const loadInventory = async () => {
 
 const initWarehouseChart = () => {
   if (!warehouseChartRef.value) return
-  
+
   warehouseChart = echarts.init(warehouseChartRef.value)
-  window.addEventListener('resize', () => warehouseChart?.resize())
-  
-  const warehouseData = inventoryList.value.reduce((acc: any[], item: any) => {
+  const handler = () => warehouseChart?.resize()
+  window.addEventListener('resize', handler)
+  resizeHandlers.push(handler)
+
+  interface WarehouseData {
+    name: string
+    value: number
+  }
+
+  const warehouseData = inventoryList.value.reduce<WarehouseData[]>((acc, item) => {
     const existing = acc.find(w => w.name === item.warehouseName)
     if (existing) {
       existing.value += item.quantity
     } else {
-      acc.push({ name: item.warehouseName, value: item.quantity })
+      acc.push({ name: item.warehouseName || '未知仓库', value: item.quantity })
     }
     return acc
   }, [])
-  
+
   warehouseChart.setOption({
     tooltip: { trigger: 'item' },
     series: [{
@@ -126,14 +136,16 @@ const initWarehouseChart = () => {
 
 const initTopChart = () => {
   if (!topChartRef.value) return
-  
+
   topChart = echarts.init(topChartRef.value)
-  window.addEventListener('resize', () => topChart?.resize())
-  
+  const handler = () => topChart?.resize()
+  window.addEventListener('resize', handler)
+  resizeHandlers.push(handler)
+
   const sorted = [...inventoryList.value].sort((a, b) => b.quantity - a.quantity).slice(0, 10)
-  const names = sorted.map(item => item.productName)
+  const names = sorted.map(item => item.productName || '未知商品')
   const values = sorted.map(item => item.quantity)
-  
+
   topChart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'value' },
@@ -153,6 +165,10 @@ onMounted(async () => {
 onUnmounted(() => {
   warehouseChart?.dispose()
   topChart?.dispose()
+  resizeHandlers.forEach(handler => {
+    window.removeEventListener('resize', handler)
+  })
+  resizeHandlers.length = 0
 })
 </script>
 

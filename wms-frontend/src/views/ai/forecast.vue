@@ -68,24 +68,32 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
+import type { ECharts } from '@/utils/echarts'
 import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/PageHeader.vue'
 import { forecast } from '@/api/ai'
 import { listProduct } from '@/api/product'
+import type { Product, DemandForecast } from '@/types/api'
 
 const loading = ref(false)
 const chartRef = ref<HTMLElement>()
-let chart: echarts.ECharts | null = null
+let chart: ECharts | null = null
+const resizeHandlers: Array<() => void> = []
 
-const productList = ref<any[]>([])
+const productList = ref<Product[]>([])
 
 const form = reactive({
   productId: undefined as number | undefined,
   days: 30
 })
 
-const result = ref<any>(null)
+interface ForecastResult extends DemandForecast {
+  forecastData?: Array<{ date: string; value: number }>
+  replenishDate?: string
+}
+
+const result = ref<ForecastResult | null>(null)
 
 const loadProducts = async () => {
   try {
@@ -93,9 +101,9 @@ const loadProducts = async () => {
     productList.value = res.data.records
   } catch {
     productList.value = [
-      { id: 1, name: '商品A' },
-      { id: 2, name: '商品B' },
-      { id: 3, name: '商品C' }
+      { id: 1, productCode: 'P001', productName: '商品A', categoryId: 1, status: 1 },
+      { id: 2, productCode: 'P002', productName: '商品B', categoryId: 1, status: 1 },
+      { id: 3, productCode: 'P003', productName: '商品C', categoryId: 1, status: 1 }
     ]
   }
 }
@@ -109,15 +117,16 @@ const handleForecast = async () => {
   try {
     const res: any = await forecast(form.productId, form.days)
     result.value = res.data
-    
+
     await nextTick()
     initChart()
   } catch {
     result.value = {
+      productId: form.productId,
       forecastQuantity: 1250,
       confidence: 85,
-      replenishDate: '2026-06-15',
       explanation: '根据历史销售数据分析，该商品近30天销售趋势平稳，预计未来需求将保持稳定。建议在库存降至安全库存线前进行补货。',
+      suggestion: '建议提前2周补货',
       forecastData: [
         { date: '2026-06-01', value: 40 },
         { date: '2026-06-02', value: 45 },
@@ -135,14 +144,16 @@ const handleForecast = async () => {
 
 const initChart = () => {
   if (!chartRef.value || !result.value?.forecastData) return
-  
+
   chart?.dispose()
   chart = echarts.init(chartRef.value)
-  window.addEventListener('resize', () => chart?.resize())
-  
-  const dates = result.value.forecastData.map((item: any) => item.date)
-  const values = result.value.forecastData.map((item: any) => item.value)
-  
+  const handler = () => chart?.resize()
+  window.addEventListener('resize', handler)
+  resizeHandlers.push(handler)
+
+  const dates = result.value.forecastData.map((item) => item.date)
+  const values = result.value.forecastData.map((item) => item.value)
+
   chart.setOption({
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: dates },
@@ -166,6 +177,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   chart?.dispose()
+  resizeHandlers.forEach(handler => {
+    window.removeEventListener('resize', handler)
+  })
+  resizeHandlers.length = 0
 })
 </script>
 

@@ -65,7 +65,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import echarts from '@/utils/echarts'
+import type { ECharts } from '@/utils/echarts'
 import PageHeader from '@/components/PageHeader.vue'
 import { getOrderStats, getDailyInbound, getDailyOutbound, getInboundRank, getOutboundRank } from '@/api/orderStats'
 
@@ -80,14 +81,19 @@ const outboundChartRef = ref<HTMLElement>()
 const inboundRankChartRef = ref<HTMLElement>()
 const outboundRankChartRef = ref<HTMLElement>()
 
-let inboundChart: echarts.ECharts | null = null
-let outboundChart: echarts.ECharts | null = null
-let inboundRankChart: echarts.ECharts | null = null
-let outboundRankChart: echarts.ECharts | null = null
+let inboundChart: ECharts | null = null
+let outboundChart: ECharts | null = null
+let inboundRankChart: ECharts | null = null
+let outboundRankChart: ECharts | null = null
 
-const initChart = (el: HTMLElement): echarts.ECharts => {
+// 存储 resize 事件处理器，便于在 onUnmounted 中移除
+const resizeHandlers: Array<() => void> = []
+
+const initChart = (el: HTMLElement): ECharts => {
   const chart = echarts.init(el)
-  window.addEventListener('resize', () => chart.resize())
+  const handler = () => chart.resize()
+  window.addEventListener('resize', handler)
+  resizeHandlers.push(handler)
   return chart
 }
 
@@ -107,7 +113,7 @@ const loadDailyInbound = async () => {
     const res: any = await getDailyInbound()
     const dates = res.data.map((item: any) => item.date)
     const values = res.data.map((item: any) => item.count)
-    
+
     inboundChart = initChart(inboundChartRef.value!)
     inboundChart.setOption({
       tooltip: { trigger: 'axis' },
@@ -126,7 +132,7 @@ const loadDailyOutbound = async () => {
     const res: any = await getDailyOutbound()
     const dates = res.data.map((item: any) => item.date)
     const values = res.data.map((item: any) => item.count)
-    
+
     outboundChart = initChart(outboundChartRef.value!)
     outboundChart.setOption({
       tooltip: { trigger: 'axis' },
@@ -145,7 +151,7 @@ const loadInboundRank = async () => {
     const res: any = await getInboundRank({ limit: 10 })
     const names = res.data.map((item: any) => item.productName)
     const values = res.data.map((item: any) => item.quantity)
-    
+
     inboundRankChart = initChart(inboundRankChartRef.value!)
     inboundRankChart.setOption({
       tooltip: { trigger: 'axis' },
@@ -164,7 +170,7 @@ const loadOutboundRank = async () => {
     const res: any = await getOutboundRank({ limit: 10 })
     const names = res.data.map((item: any) => item.productName)
     const values = res.data.map((item: any) => item.quantity)
-    
+
     outboundRankChart = initChart(outboundRankChartRef.value!)
     outboundRankChart.setOption({
       tooltip: { trigger: 'axis' },
@@ -188,10 +194,17 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // 销毁图表实例
   inboundChart?.dispose()
   outboundChart?.dispose()
   inboundRankChart?.dispose()
   outboundRankChart?.dispose()
+
+  // 移除 resize 事件监听，避免内存泄漏
+  resizeHandlers.forEach(handler => {
+    window.removeEventListener('resize', handler)
+  })
+  resizeHandlers.length = 0
 })
 </script>
 
