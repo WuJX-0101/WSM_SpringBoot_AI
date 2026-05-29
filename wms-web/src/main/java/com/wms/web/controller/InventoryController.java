@@ -1,6 +1,5 @@
 package com.wms.web.controller;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.wms.common.core.PageResult;
 import com.wms.common.core.R;
 import com.wms.model.dto.InventoryAdjustDTO;
@@ -33,7 +32,6 @@ public class InventoryController {
      */
     @Operation(summary = "查询库存日志")
     @GetMapping("/log")
-    @SaCheckPermission("inventory:log")
     public R<PageResult<InventoryLogVO>> listLog(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -48,7 +46,6 @@ public class InventoryController {
      */
     @Operation(summary = "查询库存详情")
     @GetMapping("/{id}")
-    @SaCheckPermission("inventory:view")
     public R<WmsInventory> getById(@Parameter(description = "库存ID") @PathVariable Long id) {
         WmsInventory inventory = inventoryService.getById(id);
         return R.ok(inventory);
@@ -59,7 +56,6 @@ public class InventoryController {
      */
     @Operation(summary = "分页查询库存列表")
     @GetMapping("/list")
-    @SaCheckPermission("inventory:list")
     public R<PageResult<InventoryVO>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -75,7 +71,6 @@ public class InventoryController {
      */
     @Operation(summary = "查询仓库下的库存列表")
     @GetMapping("/warehouse/{warehouseId}")
-    @SaCheckPermission("inventory:list")
     public R<List<WmsInventory>> listByWarehouseId(
             @Parameter(description = "仓库ID") @PathVariable Long warehouseId) {
         List<WmsInventory> result = inventoryService.listByWarehouseId(warehouseId);
@@ -87,7 +82,6 @@ public class InventoryController {
      */
     @Operation(summary = "查询商品的库存列表")
     @GetMapping("/product/{productId}")
-    @SaCheckPermission("inventory:list")
     public R<List<WmsInventory>> listByProductId(
             @Parameter(description = "商品ID") @PathVariable Long productId) {
         List<WmsInventory> result = inventoryService.listByProductId(productId);
@@ -99,7 +93,6 @@ public class InventoryController {
      */
     @Operation(summary = "查询商品在指定仓库的总库存")
     @GetMapping("/total")
-    @SaCheckPermission("inventory:view")
     public R<Integer> getTotalQuantity(
             @Parameter(description = "仓库ID") @RequestParam Long warehouseId,
             @Parameter(description = "商品ID") @RequestParam Long productId) {
@@ -112,7 +105,6 @@ public class InventoryController {
      */
     @Operation(summary = "库存调整")
     @PutMapping("/{id}/adjust")
-    @SaCheckPermission("inventory:adjust")
     public R<Void> adjust(
             @Parameter(description = "库存ID") @PathVariable Long id,
             @RequestBody InventoryAdjustDTO dto) {
