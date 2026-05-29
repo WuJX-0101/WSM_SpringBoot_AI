@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "仓库管理接口")
 @RestController
 @RequestMapping("/api/v1/warehouse")
@@ -57,6 +59,13 @@ public class WarehouseController {
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "关键词") @RequestParam(required = false) String keyword) {
         PageResult<WmsWarehouse> result = warehouseService.list(page, size, keyword);
+        return R.ok(result);
+    }
+
+    @Operation(summary = "获取所有启用的仓库（用于下拉选择）")
+    @GetMapping("/all")
+    public R<List<WmsWarehouse>> listAll() {
+        List<WmsWarehouse> result = warehouseService.listAll();
         return R.ok(result);
     }
 }

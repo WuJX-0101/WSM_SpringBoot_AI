@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 供应商管理接口
  */
@@ -75,6 +77,13 @@ public class SupplierController {
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "关键词") @RequestParam(required = false) String keyword) {
         PageResult<WmsSupplier> result = supplierService.list(page, size, keyword);
+        return R.ok(result);
+    }
+
+    @Operation(summary = "获取所有启用的供应商（用于下拉选择）")
+    @GetMapping("/all")
+    public R<List<WmsSupplier>> listAll() {
+        List<WmsSupplier> result = supplierService.listAll();
         return R.ok(result);
     }
 }

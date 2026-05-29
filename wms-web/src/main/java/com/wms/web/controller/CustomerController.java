@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 客户管理接口
  */
@@ -75,6 +77,13 @@ public class CustomerController {
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "关键词") @RequestParam(required = false) String keyword) {
         PageResult<WmsCustomer> result = customerService.list(page, size, keyword);
+        return R.ok(result);
+    }
+
+    @Operation(summary = "获取所有启用的客户（用于下拉选择）")
+    @GetMapping("/all")
+    public R<List<WmsCustomer>> listAll() {
+        List<WmsCustomer> result = customerService.listAll();
         return R.ok(result);
     }
 }
