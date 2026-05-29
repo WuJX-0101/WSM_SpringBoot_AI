@@ -9,6 +9,7 @@ import com.wms.model.dto.InboundOrderDTO;
 import com.wms.model.entity.*;
 import com.wms.model.vo.InboundOrderItemVO;
 import com.wms.model.vo.InboundOrderVO;
+import com.wms.service.DashboardService;
 import com.wms.service.InboundOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class InboundOrderServiceImpl implements InboundOrderService {
     private final WmsWarehouseMapper warehouseMapper;
     private final WmsProductMapper productMapper;
     private final WmsLocationMapper locationMapper;
+    private final DashboardService dashboardService;
 
     /**
      * 创建入库单
@@ -223,6 +225,9 @@ public class InboundOrderServiceImpl implements InboundOrderService {
         order.setOrderStatus(2);  // 已入库
         order.setInboundTime(LocalDateTime.now());
         inboundOrderMapper.updateById(order);
+
+        // 清除仪表盘缓存（Cache Aside模式：写入后删除缓存）
+        dashboardService.clearDashboardCache();
 
         log.info("执行入库成功: {}", order.getOrderNo());
     }

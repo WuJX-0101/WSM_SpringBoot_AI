@@ -9,6 +9,7 @@ import com.wms.model.dto.OutboundOrderDTO;
 import com.wms.model.entity.*;
 import com.wms.model.vo.OutboundOrderItemVO;
 import com.wms.model.vo.OutboundOrderVO;
+import com.wms.service.DashboardService;
 import com.wms.service.OutboundOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
     private final WmsWarehouseMapper warehouseMapper;
     private final WmsProductMapper productMapper;
     private final WmsLocationMapper locationMapper;
+    private final DashboardService dashboardService;
 
     /**
      * 创建出库单
@@ -210,6 +212,9 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
         order.setOrderStatus(2);  // 已出库
         order.setOutboundTime(LocalDateTime.now());
         outboundOrderMapper.updateById(order);
+
+        // 清除仪表盘缓存（Cache Aside模式：写入后删除缓存）
+        dashboardService.clearDashboardCache();
 
         log.info("执行出库成功: {}", order.getOrderNo());
     }

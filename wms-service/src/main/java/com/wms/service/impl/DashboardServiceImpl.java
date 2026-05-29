@@ -9,6 +9,7 @@ import com.wms.service.DashboardService;
 import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -194,5 +195,14 @@ public class DashboardServiceImpl implements DashboardService {
                     .gmtCreate(order.getGmtCreate() != null ? order.getGmtCreate().format(formatter) : "")
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 清除仪表盘缓存
+     * 在入库、出库等操作后调用，确保数据一致性
+     */
+    @CacheEvict(value = CacheConfig.CACHE_DASHBOARD, key = "'stats'")
+    public void clearDashboardCache() {
+        log.info("清除仪表盘缓存");
     }
 }
