@@ -1,7 +1,12 @@
+-- WMS 仓储管理系统 - 数据库初始化脚本
+-- 包含: 建表、初始数据、菜单权限配置
+
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS wms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE wms;
+
+-- ==================== 建表语句 ====================
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS sys_user (
@@ -364,7 +369,9 @@ CREATE TABLE IF NOT EXISTS sys_operation_log (
     KEY idx_gmt_create (gmt_create)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
--- 初始化管理员用户
+-- ==================== 初始数据 ====================
+
+-- 初始化管理员用户 (密码: 123456)
 INSERT INTO sys_user (id, username, password, nickname, status) VALUES
 (1, 'admin', '$2a$10$M2iAYXuQUJjScYJF6q232.T06jSxHKM4SvmmJ5UZNr0cW.K3Cjdsy', '系统管理员', 1);
 
@@ -392,81 +399,126 @@ INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perm
 (8, 0, 'AI智能', 1, '/ai', NULL, NULL, 'MagicStick', 8, 1),
 (9, 0, '系统管理', 1, '/system', NULL, NULL, 'Setting', 9, 1);
 
--- 仓库管理子菜单
+-- 仓库管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
 (101, 1, '仓库列表', 2, '/warehouse/list', 'warehouse/list', 'warehouse:view', NULL, 1, 1),
-(102, 1, '库位管理', 2, '/location/list', 'location/list', 'warehouse:view', NULL, 2, 1);
+(102, 1, '库位管理', 2, '/location/list', 'location/list', 'location:view', NULL, 2, 1),
+(111, 1, '查看仓库', 3, NULL, NULL, 'warehouse:view', NULL, 1, 1),
+(112, 1, '创建仓库', 3, NULL, NULL, 'warehouse:create', NULL, 2, 1),
+(113, 1, '编辑仓库', 3, NULL, NULL, 'warehouse:edit', NULL, 3, 1),
+(114, 1, '删除仓库', 3, NULL, NULL, 'warehouse:delete', NULL, 4, 1),
+(121, 1, '查看库位', 3, NULL, NULL, 'location:view', NULL, 5, 1),
+(122, 1, '创建库位', 3, NULL, NULL, 'location:create', NULL, 6, 1),
+(123, 1, '编辑库位', 3, NULL, NULL, 'location:edit', NULL, 7, 1),
+(124, 1, '删除库位', 3, NULL, NULL, 'location:delete', NULL, 8, 1);
 
--- 商品管理子菜单
+-- 商品管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(201, 2, '商品分类', 2, '/category/list', 'category/list', 'product:view', NULL, 1, 1),
-(202, 2, '商品列表', 2, '/product/list', 'product/list', 'product:view', NULL, 2, 1);
+(201, 2, '商品分类', 2, '/category/list', 'category/list', 'category:view', NULL, 1, 1),
+(202, 2, '商品列表', 2, '/product/list', 'product/list', 'product:view', NULL, 2, 1),
+(211, 2, '查看商品', 3, NULL, NULL, 'product:view', NULL, 1, 1),
+(212, 2, '创建商品', 3, NULL, NULL, 'product:create', NULL, 2, 1),
+(213, 2, '编辑商品', 3, NULL, NULL, 'product:edit', NULL, 3, 1),
+(214, 2, '删除商品', 3, NULL, NULL, 'product:delete', NULL, 4, 1),
+(221, 2, '查看分类', 3, NULL, NULL, 'category:view', NULL, 5, 1),
+(222, 2, '创建分类', 3, NULL, NULL, 'category:create', NULL, 6, 1),
+(223, 2, '编辑分类', 3, NULL, NULL, 'category:edit', NULL, 7, 1),
+(224, 2, '删除分类', 3, NULL, NULL, 'category:delete', NULL, 8, 1);
 
--- 基础数据子菜单
+-- 基础数据菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(301, 3, '供应商管理', 2, '/supplier/list', 'supplier/list', 'base:view', NULL, 1, 1),
-(302, 3, '客户管理', 2, '/customer/list', 'customer/list', 'base:view', NULL, 2, 1);
+(301, 3, '供应商管理', 2, '/supplier/list', 'supplier/list', 'supplier:view', NULL, 1, 1),
+(302, 3, '客户管理', 2, '/customer/list', 'customer/list', 'customer:view', NULL, 2, 1),
+(311, 3, '查看供应商', 3, NULL, NULL, 'supplier:view', NULL, 1, 1),
+(312, 3, '创建供应商', 3, NULL, NULL, 'supplier:create', NULL, 2, 1),
+(313, 3, '编辑供应商', 3, NULL, NULL, 'supplier:edit', NULL, 3, 1),
+(314, 3, '删除供应商', 3, NULL, NULL, 'supplier:delete', NULL, 4, 1),
+(321, 3, '查看客户', 3, NULL, NULL, 'customer:view', NULL, 5, 1),
+(322, 3, '创建客户', 3, NULL, NULL, 'customer:create', NULL, 6, 1),
+(323, 3, '编辑客户', 3, NULL, NULL, 'customer:edit', NULL, 7, 1),
+(324, 3, '删除客户', 3, NULL, NULL, 'customer:delete', NULL, 8, 1);
 
--- 入库管理子菜单
+-- 入库管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(401, 4, '入库单列表', 2, '/inbound/list', 'inbound/list', 'inbound:view', NULL, 1, 1),
-(402, 4, '创建入库单', 2, '/inbound/create', 'inbound/create', 'inbound:create', NULL, 2, 1);
+(401, 4, '入库单列表', 2, '/inbound/list', 'inbound/list', 'inbound:list', NULL, 1, 1),
+(402, 4, '创建入库单', 2, '/inbound/create', 'inbound/create', 'inbound:create', NULL, 2, 1),
+(411, 4, '创建入库', 3, NULL, NULL, 'inbound:create', NULL, 1, 1),
+(412, 4, '审核入库', 3, NULL, NULL, 'inbound:audit', NULL, 2, 1),
+(413, 4, '执行入库', 3, NULL, NULL, 'inbound:execute', NULL, 3, 1),
+(414, 4, '取消入库', 3, NULL, NULL, 'inbound:cancel', NULL, 4, 1),
+(415, 4, '查看入库', 3, NULL, NULL, 'inbound:view', NULL, 5, 1),
+(416, 4, '入库列表', 3, NULL, NULL, 'inbound:list', NULL, 6, 1);
 
--- 出库管理子菜单
+-- 出库管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(501, 5, '出库单列表', 2, '/outbound/list', 'outbound/list', 'outbound:view', NULL, 1, 1),
-(502, 5, '创建出库单', 2, '/outbound/create', 'outbound/create', 'outbound:create', NULL, 2, 1);
+(501, 5, '出库单列表', 2, '/outbound/list', 'outbound/list', 'outbound:list', NULL, 1, 1),
+(502, 5, '创建出库单', 2, '/outbound/create', 'outbound/create', 'outbound:create', NULL, 2, 1),
+(511, 5, '创建出库', 3, NULL, NULL, 'outbound:create', NULL, 1, 1),
+(512, 5, '审核出库', 3, NULL, NULL, 'outbound:audit', NULL, 2, 1),
+(513, 5, '执行出库', 3, NULL, NULL, 'outbound:execute', NULL, 3, 1),
+(514, 5, '取消出库', 3, NULL, NULL, 'outbound:cancel', NULL, 4, 1),
+(515, 5, '查看出库', 3, NULL, NULL, 'outbound:view', NULL, 5, 1),
+(516, 5, '出库列表', 3, NULL, NULL, 'outbound:list', NULL, 6, 1);
 
--- 库存管理子菜单
+-- 库存管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(601, 6, '库存列表', 2, '/inventory/list', 'inventory/list', 'inventory:view', NULL, 1, 1),
-(602, 6, '库存日志', 2, '/inventory/log', 'inventory/log', 'inventory:view', NULL, 2, 1);
+(601, 6, '库存列表', 2, '/inventory/list', 'inventory/list', 'inventory:list', NULL, 1, 1),
+(602, 6, '库存日志', 2, '/inventory/log', 'inventory/log', 'inventory:log', NULL, 2, 1),
+(611, 6, '查看库存', 3, NULL, NULL, 'inventory:view', NULL, 1, 1),
+(612, 6, '库存列表', 3, NULL, NULL, 'inventory:list', NULL, 2, 1),
+(613, 6, '库存调整', 3, NULL, NULL, 'inventory:adjust', NULL, 3, 1),
+(614, 6, '库存日志', 3, NULL, NULL, 'inventory:log', NULL, 4, 1);
 
--- 报表分析子菜单
+-- 报表分析菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(701, 7, '订单统计', 2, '/report/order', 'report/order', 'report:view', NULL, 1, 1),
-(702, 7, '库存报表', 2, '/report/inventory', 'report/inventory', 'report:view', NULL, 2, 1);
+(701, 7, '订单统计', 2, '/report/order', 'report/order', 'report:order', NULL, 1, 1),
+(702, 7, '库存报表', 2, '/report/inventory', 'report/inventory', 'report:inventory', NULL, 2, 1),
+(711, 7, '订单统计', 3, NULL, NULL, 'report:order', NULL, 1, 1),
+(712, 7, '库存报表', 3, NULL, NULL, 'report:inventory', NULL, 2, 1);
 
--- AI智能子菜单
+-- AI智能菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(801, 8, '需求预测', 2, '/ai/forecast', 'ai/forecast', 'ai:view', NULL, 1, 1),
-(802, 8, '智能补货', 2, '/ai/replenishment', 'ai/replenishment', 'ai:view', NULL, 2, 1),
-(803, 8, '异常检测', 2, '/ai/anomaly', 'ai/anomaly', 'ai:view', NULL, 3, 1);
+(801, 8, '需求预测', 2, '/ai/forecast', 'ai/forecast', 'ai:forecast', NULL, 1, 1),
+(802, 8, '智能补货', 2, '/ai/replenishment', 'ai/replenishment', 'ai:replenishment', NULL, 2, 1),
+(803, 8, '异常检测', 2, '/ai/anomaly', 'ai/anomaly', 'ai:anomaly', NULL, 3, 1),
+(811, 8, '需求预测', 3, NULL, NULL, 'ai:forecast', NULL, 1, 1),
+(812, 8, '智能补货', 3, NULL, NULL, 'ai:replenishment', NULL, 2, 1),
+(813, 8, '异常检测', 3, NULL, NULL, 'ai:anomaly', NULL, 3, 1),
+(814, 8, 'AI对话', 3, NULL, NULL, 'ai:chat', NULL, 4, 1);
 
--- 系统管理子菜单
+-- 系统管理菜单 + 按钮权限
 INSERT INTO sys_menu (id, parent_id, menu_name, menu_type, path, component, perms, icon, sort_order, status) VALUES
-(901, 9, '员工管理', 2, '/system/employee', 'system/employee/list', 'system:user:view', NULL, 1, 1);
+(901, 9, '员工管理', 2, '/system/employee', 'system/employee/list', 'system:user:view', NULL, 1, 1),
+(911, 9, '查看员工', 3, NULL, NULL, 'system:user:view', NULL, 1, 1),
+(912, 9, '创建员工', 3, NULL, NULL, 'system:user:create', NULL, 2, 1),
+(913, 9, '编辑员工', 3, NULL, NULL, 'system:user:edit', NULL, 3, 1),
+(914, 9, '删除员工', 3, NULL, NULL, 'system:user:delete', NULL, 4, 1);
 
 -- ==================== 角色权限分配 ====================
 
 -- 超级管理员：所有权限
-INSERT INTO sys_role_menu (id, role_id, menu_id) 
-SELECT (@row_num := @row_num + 1) + 1000, 1, id FROM sys_menu, (SELECT @row_num := 0) r WHERE is_deleted = 0;
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT 1, id FROM sys_menu WHERE is_deleted = 0 AND status = 1;
 
--- 仓库管理员：仓库、入库、出库、库存管理
-INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
--- 仓库管理
-(2001, 2, 1), (2002, 2, 101), (2003, 2, 102),
--- 入库管理
-(2004, 2, 4), (2005, 2, 401), (2006, 2, 402),
--- 出库管理
-(2007, 2, 5), (2008, 2, 501), (2009, 2, 502),
--- 库存管理
-(2010, 2, 6), (2011, 2, 601), (2012, 2, 602);
+-- 仓库管理员：业务操作权限（不包括系统管理）
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT 2, id FROM sys_menu
+WHERE is_deleted = 0 AND status = 1
+AND parent_id NOT IN (9)
+AND id NOT IN (SELECT id FROM sys_menu WHERE parent_id = 9);
 
--- 普通用户：仅查看权限
-INSERT INTO sys_role_menu (id, role_id, menu_id) VALUES
--- 仓库管理（查看）
-(3001, 3, 1), (3002, 3, 101), (3003, 3, 102),
--- 商品管理（查看）
-(3004, 3, 2), (3005, 3, 201), (3006, 3, 202),
--- 基础数据（查看）
-(3007, 3, 3), (3008, 3, 301), (3009, 3, 302),
--- 入库管理（查看）
-(3010, 3, 4), (3011, 3, 401),
--- 出库管理（查看）
-(3012, 3, 5), (3013, 3, 501),
--- 库存管理（查看）
-(3014, 3, 6), (3015, 3, 601), (3016, 3, 602),
--- 报表分析（查看）
-(3017, 3, 7), (3018, 3, 701), (3019, 3, 702);
+-- 普通用户：只读权限（view/list）
+INSERT INTO sys_role_menu (role_id, menu_id)
+SELECT 3, id FROM sys_menu
+WHERE is_deleted = 0 AND status = 1
+AND (
+    perms LIKE '%:view'
+    OR perms LIKE '%:list'
+    OR parent_id IN (7, 8)
+);
+
+-- ==================== 初始化完成 ====================
+SELECT 'WMS 数据库初始化完成！' AS message;
+SELECT '默认账号: admin / 123456' AS account;
+SELECT COUNT(*) AS total_menus FROM sys_menu WHERE is_deleted = 0;
+SELECT COUNT(*) AS total_permissions FROM sys_menu WHERE is_deleted = 0 AND menu_type = 3;
