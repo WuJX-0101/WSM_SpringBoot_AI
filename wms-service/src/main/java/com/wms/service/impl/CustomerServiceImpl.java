@@ -8,9 +8,14 @@ import com.wms.dao.mapper.WmsCustomerMapper;
 import com.wms.model.dto.CustomerDTO;
 import com.wms.model.entity.WmsCustomer;
 import com.wms.service.CustomerService;
+
+import java.util.List;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,6 +39,7 @@ public class CustomerServiceImpl implements CustomerService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CUSTOMER, key = "'all'")
     public WmsCustomer create(CustomerDTO dto) {
         // 1. 检查客户编码唯一性
         WmsCustomer exist = customerMapper.selectOne(
@@ -65,6 +71,7 @@ public class CustomerServiceImpl implements CustomerService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CUSTOMER, key = "'all'")
     public WmsCustomer update(Long id, CustomerDTO dto) {
         // 1. 检查客户是否存在
         WmsCustomer customer = customerMapper.selectById(id);
@@ -94,6 +101,7 @@ public class CustomerServiceImpl implements CustomerService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CUSTOMER, key = "'all'")
     public void delete(Long id) {
         WmsCustomer customer = customerMapper.selectById(id);
         if (customer == null) {
@@ -141,5 +149,21 @@ public class CustomerServiceImpl implements CustomerService {
 
         Page<WmsCustomer> result = customerMapper.selectPage(new Page<>(page, size), wrapper);
         return new PageResult<>(result.getRecords(), result.getTotal(), result.getSize(), result.getCurrent());
+    }
+
+    /**
+     * 获取所有启用的客户（用于下拉选择）
+     * 缓存：结果缓存10分钟
+     */
+    @Override
+    @Cacheable(value = CacheConfig.CACHE_CUSTOMER, key = "'all'")
+    public List<WmsCustomer> listAll() {
+        log.debug("从数据库查询所有客户");
+        return customerMapper.selectList(
+                new LambdaQueryWrapper<WmsCustomer>()
+                        .eq(WmsCustomer::getStatus, 1)
+                        .eq(WmsCustomer::getIsDeleted, 0)
+                        .orderByAsc(WmsCustomer::getCustomerCode)
+        );
     }
 }

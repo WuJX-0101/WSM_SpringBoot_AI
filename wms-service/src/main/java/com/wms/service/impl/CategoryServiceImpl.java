@@ -6,9 +6,12 @@ import com.wms.dao.mapper.WmsCategoryMapper;
 import com.wms.model.dto.CategoryDTO;
 import com.wms.model.entity.WmsCategory;
 import com.wms.service.CategoryService;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORY, allEntries = true)
     public WmsCategory create(CategoryDTO dto) {
         // 1. 检查分类编码唯一性
         WmsCategory exist = categoryMapper.selectOne(
@@ -80,6 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORY, allEntries = true)
     public WmsCategory update(Long id, CategoryDTO dto) {
         // 1. 检查分类是否存在
         WmsCategory category = categoryMapper.selectById(id);
@@ -116,6 +121,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_CATEGORY, allEntries = true)
     public void delete(Long id) {
         WmsCategory category = categoryMapper.selectById(id);
         if (category == null) {
@@ -169,8 +175,10 @@ public class CategoryServiceImpl implements CategoryService {
      * 3. 递归构建树结构
      * 
      * 注意: 这里简化处理，只返回两层树结构
+     * 缓存：结果缓存10分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_CATEGORY, key = "'tree'")
     public List<WmsCategory> tree() {
         // 1. 查询所有分类
         List<WmsCategory> allCategories = list();

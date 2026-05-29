@@ -4,6 +4,8 @@ import com.wms.common.core.PageResult;
 import com.wms.model.dto.WarehouseDTO;
 import com.wms.model.entity.WmsWarehouse;
 
+import java.util.List;
+
 public interface WarehouseService {
 
     /**
@@ -30,4 +32,9 @@ public interface WarehouseService {
      * 分页查询仓库列表
      */
     PageResult<WmsWarehouse> list(int page, int size, String keyword);
+
+    /**
+     * 获取所有启用的仓库（用于下拉选择）
+     */
+    List<WmsWarehouse> listAll();
 }

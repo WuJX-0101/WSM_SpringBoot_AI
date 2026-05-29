@@ -8,9 +8,14 @@ import com.wms.dao.mapper.WmsWarehouseMapper;
 import com.wms.model.dto.WarehouseDTO;
 import com.wms.model.entity.WmsWarehouse;
 import com.wms.service.WarehouseService;
+
+import java.util.List;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,6 +29,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_WAREHOUSE, key = "'all'")
     public WmsWarehouse create(WarehouseDTO dto) {
         WmsWarehouse exist = warehouseMapper.selectOne(
                 new LambdaQueryWrapper<WmsWarehouse>()
@@ -43,6 +49,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_WAREHOUSE, key = "'all'")
     public WmsWarehouse update(Long id, WarehouseDTO dto) {
         WmsWarehouse warehouse = warehouseMapper.selectById(id);
         if (warehouse == null) {
@@ -66,6 +73,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_WAREHOUSE, key = "'all'")
     public void delete(Long id) {
         WmsWarehouse warehouse = warehouseMapper.selectById(id);
         if (warehouse == null) {
@@ -121,5 +129,21 @@ public class WarehouseServiceImpl implements WarehouseService {
         
         // 转换为统一的分页结果格式
         return new PageResult<>(result.getRecords(), result.getTotal(), result.getSize(), result.getCurrent());
+    }
+
+    /**
+     * 获取所有启用的仓库（用于下拉选择）
+     * 缓存：结果缓存10分钟
+     */
+    @Override
+    @Cacheable(value = CacheConfig.CACHE_WAREHOUSE, key = "'all'")
+    public List<WmsWarehouse> listAll() {
+        log.debug("从数据库查询所有仓库");
+        return warehouseMapper.selectList(
+                new LambdaQueryWrapper<WmsWarehouse>()
+                        .eq(WmsWarehouse::getStatus, 1)
+                        .eq(WmsWarehouse::getIsDeleted, 0)
+                        .orderByAsc(WmsWarehouse::getWarehouseCode)
+        );
     }
 }

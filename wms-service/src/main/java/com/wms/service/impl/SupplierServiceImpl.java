@@ -8,9 +8,14 @@ import com.wms.dao.mapper.WmsSupplierMapper;
 import com.wms.model.dto.SupplierDTO;
 import com.wms.model.entity.WmsSupplier;
 import com.wms.service.SupplierService;
+
+import java.util.List;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -34,6 +39,7 @@ public class SupplierServiceImpl implements SupplierService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_SUPPLIER, key = "'all'")
     public WmsSupplier create(SupplierDTO dto) {
         // 1. 检查供应商编码唯一性
         WmsSupplier exist = supplierMapper.selectOne(
@@ -65,6 +71,7 @@ public class SupplierServiceImpl implements SupplierService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_SUPPLIER, key = "'all'")
     public WmsSupplier update(Long id, SupplierDTO dto) {
         // 1. 检查供应商是否存在
         WmsSupplier supplier = supplierMapper.selectById(id);
@@ -94,6 +101,7 @@ public class SupplierServiceImpl implements SupplierService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = CacheConfig.CACHE_SUPPLIER, key = "'all'")
     public void delete(Long id) {
         WmsSupplier supplier = supplierMapper.selectById(id);
         if (supplier == null) {
@@ -141,5 +149,21 @@ public class SupplierServiceImpl implements SupplierService {
 
         Page<WmsSupplier> result = supplierMapper.selectPage(new Page<>(page, size), wrapper);
         return new PageResult<>(result.getRecords(), result.getTotal(), result.getSize(), result.getCurrent());
+    }
+
+    /**
+     * 获取所有启用的供应商（用于下拉选择）
+     * 缓存：结果缓存10分钟
+     */
+    @Override
+    @Cacheable(value = CacheConfig.CACHE_SUPPLIER, key = "'all'")
+    public List<WmsSupplier> listAll() {
+        log.debug("从数据库查询所有供应商");
+        return supplierMapper.selectList(
+                new LambdaQueryWrapper<WmsSupplier>()
+                        .eq(WmsSupplier::getStatus, 1)
+                        .eq(WmsSupplier::getIsDeleted, 0)
+                        .orderByAsc(WmsSupplier::getSupplierCode)
+        );
     }
 }

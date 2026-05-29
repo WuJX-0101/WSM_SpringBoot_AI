@@ -31,26 +31,40 @@ public class CacheConfig {
      */
     public static final String CACHE_DASHBOARD = "dashboard";
     public static final String CACHE_ORDER_STATS = "orderStats";
-    public static final String CACHE_PRODUCT_LIST = "productList";
-    public static final String CACHE_WAREHOUSE_LIST = "warehouseList";
+    public static final String CACHE_PRODUCT = "product";
+    public static final String CACHE_WAREHOUSE = "warehouse";
+    public static final String CACHE_LOCATION = "location";
+    public static final String CACHE_CATEGORY = "category";
+    public static final String CACHE_SUPPLIER = "supplier";
+    public static final String CACHE_CUSTOMER = "customer";
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(5))  // 默认缓存5分钟
+                .entryTtl(Duration.ofMinutes(10))  // 默认缓存10分钟
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
                 .disableCachingNullValues();
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
+                // 统计数据缓存5分钟
                 .withCacheConfiguration(CACHE_DASHBOARD,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration(CACHE_ORDER_STATS,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration(CACHE_PRODUCT_LIST,
+                // 基础数据缓存10分钟
+                .withCacheConfiguration(CACHE_PRODUCT,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration(CACHE_WAREHOUSE_LIST,
+                .withCacheConfiguration(CACHE_WAREHOUSE,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration(CACHE_LOCATION,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration(CACHE_CATEGORY,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration(CACHE_SUPPLIER,
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration(CACHE_CUSTOMER,
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
                 .build();
     }
