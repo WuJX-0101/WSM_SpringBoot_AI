@@ -92,8 +92,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import PageHeader from '@/components/PageHeader.vue'
 import { createOutbound } from '@/api/outbound'
-import { listCustomer } from '@/api/customer'
-import { listWarehouse } from '@/api/warehouse'
+import { getAllCustomer } from '@/api/customer'
+import { getAllWarehouse } from '@/api/warehouse'
 import { listProduct } from '@/api/product'
 
 const router = useRouter()
@@ -126,12 +126,12 @@ const totalAmount = computed(() => {
 
 const loadData = async () => {
   const [customerRes, warehouseRes, productRes]: any[] = await Promise.all([
-    listCustomer({ page: 1, size: 100 }),
-    listWarehouse({ page: 1, size: 100 }),
+    getAllCustomer(),
+    getAllWarehouse(),
     listProduct({ page: 1, size: 100 })
   ])
-  customerList.value = customerRes.data.records
-  warehouseList.value = warehouseRes.data.records
+  customerList.value = customerRes.data
+  warehouseList.value = warehouseRes.data
   productList.value = productRes.data.records
 }
 

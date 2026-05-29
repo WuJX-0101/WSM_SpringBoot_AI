@@ -57,7 +57,7 @@ import { ref, reactive, onMounted } from 'vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SearchForm from '@/components/SearchForm.vue'
 import { listInventoryLog } from '@/api/inventory'
-import { listWarehouse } from '@/api/warehouse'
+import { getAllWarehouse } from '@/api/warehouse'
 import { listProduct } from '@/api/product'
 
 const loading = ref(false)
@@ -81,10 +81,10 @@ const productList = ref<any[]>([])
 
 const loadData = async () => {
   const [warehouseRes, productRes]: any[] = await Promise.all([
-    listWarehouse({ page: 1, size: 100 }),
+    getAllWarehouse(),
     listProduct({ page: 1, size: 100 })
   ])
-  warehouseList.value = warehouseRes.data.records
+  warehouseList.value = warehouseRes.data
   productList.value = productRes.data.records
 }
 

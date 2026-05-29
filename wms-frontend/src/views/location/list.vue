@@ -87,7 +87,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import SearchForm from '@/components/SearchForm.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { listLocation, createLocation, updateLocation, deleteLocation } from '@/api/location'
-import { listWarehouse } from '@/api/warehouse'
+import { getAllWarehouse } from '@/api/warehouse'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -120,8 +120,8 @@ const rules: FormRules = {
 }
 
 const loadWarehouses = async () => {
-  const res: any = await listWarehouse({ page: 1, size: 100 })
-  warehouseList.value = res.data.records
+  const res: any = await getAllWarehouse()
+  warehouseList.value = res.data
 }
 
 const handleSearch = async () => {

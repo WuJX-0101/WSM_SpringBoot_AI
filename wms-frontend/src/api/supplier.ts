@@ -4,6 +4,11 @@ export function listSupplier(params: { page?: number; size?: number; keyword?: s
   return request({ url: '/api/v1/supplier/list', method: 'get', params })
 }
 
+/** 获取所有供应商（带缓存，用于下拉选择） */
+export function getAllSupplier() {
+  return request({ url: '/api/v1/supplier/all', method: 'get' })
+}
+
 export function getSupplier(id: number) {
   return request({ url: `/api/v1/supplier/${id}`, method: 'get' })
 }
