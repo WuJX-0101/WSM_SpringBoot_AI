@@ -3,6 +3,7 @@ package com.wms.web.controller;
 import com.wms.common.core.R;
 import com.wms.model.vo.OrderStatsVO;
 import com.wms.service.OrderStatsService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ public class OrderStatsController {
      */
     @Operation(summary = "获取订单统计数据")
     @GetMapping
+    @SaCheckPermission("report:order")
     public R<OrderStatsVO> getStats(
             @Parameter(description = "开始日期") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) LocalDate endDate) {
@@ -47,6 +49,7 @@ public class OrderStatsController {
      */
     @Operation(summary = "获取每日入库统计")
     @GetMapping("/daily-inbound")
+    @SaCheckPermission("report:order")
     public R<List<Map<String, Object>>> getDailyInboundStats(
             @Parameter(description = "开始日期") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) LocalDate endDate) {
@@ -65,6 +68,7 @@ public class OrderStatsController {
      */
     @Operation(summary = "获取每日出库统计")
     @GetMapping("/daily-outbound")
+    @SaCheckPermission("report:order")
     public R<List<Map<String, Object>>> getDailyOutboundStats(
             @Parameter(description = "开始日期") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) LocalDate endDate) {
@@ -83,6 +87,7 @@ public class OrderStatsController {
      */
     @Operation(summary = "获取商品入库排行")
     @GetMapping("/inbound-rank")
+    @SaCheckPermission("report:order")
     public R<List<Map<String, Object>>> getProductInboundRank(
             @Parameter(description = "开始日期") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) LocalDate endDate,
@@ -102,6 +107,7 @@ public class OrderStatsController {
      */
     @Operation(summary = "获取商品出库排行")
     @GetMapping("/outbound-rank")
+    @SaCheckPermission("report:order")
     public R<List<Map<String, Object>>> getProductOutboundRank(
             @Parameter(description = "开始日期") @RequestParam(required = false) LocalDate startDate,
             @Parameter(description = "结束日期") @RequestParam(required = false) LocalDate endDate,

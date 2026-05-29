@@ -5,6 +5,7 @@ import com.wms.common.core.R;
 import com.wms.model.dto.WarehouseDTO;
 import com.wms.model.entity.WmsWarehouse;
 import com.wms.service.WarehouseService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ public class WarehouseController {
 
     @Operation(summary = "创建仓库")
     @PostMapping
+    @SaCheckPermission("warehouse:create")
     public R<WmsWarehouse> create(@Valid @RequestBody WarehouseDTO dto) {
         WmsWarehouse warehouse = warehouseService.create(dto);
         return R.ok(warehouse, "创建成功");
@@ -31,6 +33,7 @@ public class WarehouseController {
 
     @Operation(summary = "更新仓库")
     @PutMapping("/{id}")
+    @SaCheckPermission("warehouse:edit")
     public R<WmsWarehouse> update(
             @Parameter(description = "仓库ID") @PathVariable Long id,
             @Valid @RequestBody WarehouseDTO dto) {
@@ -40,6 +43,7 @@ public class WarehouseController {
 
     @Operation(summary = "删除仓库")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("warehouse:delete")
     public R<Void> delete(@Parameter(description = "仓库ID") @PathVariable Long id) {
         warehouseService.delete(id);
         return R.ok(null, "删除成功");
@@ -47,6 +51,7 @@ public class WarehouseController {
 
     @Operation(summary = "查询仓库详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("warehouse:view")
     public R<WmsWarehouse> getById(@Parameter(description = "仓库ID") @PathVariable Long id) {
         WmsWarehouse warehouse = warehouseService.getById(id);
         return R.ok(warehouse);
@@ -54,6 +59,7 @@ public class WarehouseController {
 
     @Operation(summary = "分页查询仓库列表")
     @GetMapping("/list")
+    @SaCheckPermission("warehouse:view")
     public R<PageResult<WmsWarehouse>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -64,6 +70,7 @@ public class WarehouseController {
 
     @Operation(summary = "获取所有启用的仓库（用于下拉选择）")
     @GetMapping("/all")
+    @SaCheckPermission("warehouse:view")
     public R<List<WmsWarehouse>> listAll() {
         List<WmsWarehouse> result = warehouseService.listAll();
         return R.ok(result);

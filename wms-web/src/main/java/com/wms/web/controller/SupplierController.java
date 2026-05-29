@@ -5,6 +5,7 @@ import com.wms.common.core.R;
 import com.wms.model.dto.SupplierDTO;
 import com.wms.model.entity.WmsSupplier;
 import com.wms.service.SupplierService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,7 @@ public class SupplierController {
      */
     @Operation(summary = "创建供应商")
     @PostMapping
+    @SaCheckPermission("supplier:create")
     public R<WmsSupplier> create(@Valid @RequestBody SupplierDTO dto) {
         WmsSupplier supplier = supplierService.create(dto);
         return R.ok(supplier, "创建成功");
@@ -40,6 +42,7 @@ public class SupplierController {
      */
     @Operation(summary = "更新供应商")
     @PutMapping("/{id}")
+    @SaCheckPermission("supplier:edit")
     public R<WmsSupplier> update(
             @Parameter(description = "供应商ID") @PathVariable Long id,
             @Valid @RequestBody SupplierDTO dto) {
@@ -52,6 +55,7 @@ public class SupplierController {
      */
     @Operation(summary = "删除供应商")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("supplier:delete")
     public R<Void> delete(@Parameter(description = "供应商ID") @PathVariable Long id) {
         supplierService.delete(id);
         return R.ok(null, "删除成功");
@@ -62,6 +66,7 @@ public class SupplierController {
      */
     @Operation(summary = "查询供应商详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("supplier:view")
     public R<WmsSupplier> getById(@Parameter(description = "供应商ID") @PathVariable Long id) {
         WmsSupplier supplier = supplierService.getById(id);
         return R.ok(supplier);
@@ -72,6 +77,7 @@ public class SupplierController {
      */
     @Operation(summary = "分页查询供应商列表")
     @GetMapping("/list")
+    @SaCheckPermission("supplier:view")
     public R<PageResult<WmsSupplier>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -82,6 +88,7 @@ public class SupplierController {
 
     @Operation(summary = "获取所有启用的供应商（用于下拉选择）")
     @GetMapping("/all")
+    @SaCheckPermission("supplier:view")
     public R<List<WmsSupplier>> listAll() {
         List<WmsSupplier> result = supplierService.listAll();
         return R.ok(result);

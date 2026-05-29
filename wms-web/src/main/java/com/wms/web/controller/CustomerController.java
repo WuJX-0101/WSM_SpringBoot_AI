@@ -5,6 +5,7 @@ import com.wms.common.core.R;
 import com.wms.model.dto.CustomerDTO;
 import com.wms.model.entity.WmsCustomer;
 import com.wms.service.CustomerService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,7 @@ public class CustomerController {
      */
     @Operation(summary = "创建客户")
     @PostMapping
+    @SaCheckPermission("customer:create")
     public R<WmsCustomer> create(@Valid @RequestBody CustomerDTO dto) {
         WmsCustomer customer = customerService.create(dto);
         return R.ok(customer, "创建成功");
@@ -40,6 +42,7 @@ public class CustomerController {
      */
     @Operation(summary = "更新客户")
     @PutMapping("/{id}")
+    @SaCheckPermission("customer:edit")
     public R<WmsCustomer> update(
             @Parameter(description = "客户ID") @PathVariable Long id,
             @Valid @RequestBody CustomerDTO dto) {
@@ -52,6 +55,7 @@ public class CustomerController {
      */
     @Operation(summary = "删除客户")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("customer:delete")
     public R<Void> delete(@Parameter(description = "客户ID") @PathVariable Long id) {
         customerService.delete(id);
         return R.ok(null, "删除成功");
@@ -62,6 +66,7 @@ public class CustomerController {
      */
     @Operation(summary = "查询客户详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("customer:view")
     public R<WmsCustomer> getById(@Parameter(description = "客户ID") @PathVariable Long id) {
         WmsCustomer customer = customerService.getById(id);
         return R.ok(customer);
@@ -72,6 +77,7 @@ public class CustomerController {
      */
     @Operation(summary = "分页查询客户列表")
     @GetMapping("/list")
+    @SaCheckPermission("customer:view")
     public R<PageResult<WmsCustomer>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -82,6 +88,7 @@ public class CustomerController {
 
     @Operation(summary = "获取所有启用的客户（用于下拉选择）")
     @GetMapping("/all")
+    @SaCheckPermission("customer:view")
     public R<List<WmsCustomer>> listAll() {
         List<WmsCustomer> result = customerService.listAll();
         return R.ok(result);

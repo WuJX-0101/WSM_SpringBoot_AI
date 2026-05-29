@@ -3,6 +3,7 @@ package com.wms.web.controller;
 import com.wms.common.core.R;
 import com.wms.model.vo.DashboardVO;
 import com.wms.service.DashboardService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class DashboardController {
      */
     @Operation(summary = "获取首页统计数据")
     @GetMapping("/stats")
+    @SaCheckPermission("report:order")
     public R<DashboardVO> getDashboardStats() {
         DashboardVO stats = dashboardService.getDashboardStats();
         return R.ok(stats);

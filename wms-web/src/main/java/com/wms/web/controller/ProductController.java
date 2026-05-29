@@ -6,6 +6,7 @@ import com.wms.model.dto.ProductDTO;
 import com.wms.model.entity.WmsProduct;
 import com.wms.model.vo.ProductVO;
 import com.wms.service.ProductService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ public class ProductController {
      */
     @Operation(summary = "创建商品")
     @PostMapping
+    @SaCheckPermission("product:create")
     public R<WmsProduct> create(@Valid @RequestBody ProductDTO dto) {
         WmsProduct product = productService.create(dto);
         return R.ok(product, "创建成功");
@@ -39,6 +41,7 @@ public class ProductController {
      */
     @Operation(summary = "更新商品")
     @PutMapping("/{id}")
+    @SaCheckPermission("product:edit")
     public R<WmsProduct> update(
             @Parameter(description = "商品ID") @PathVariable Long id,
             @Valid @RequestBody ProductDTO dto) {
@@ -51,6 +54,7 @@ public class ProductController {
      */
     @Operation(summary = "删除商品")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("product:delete")
     public R<Void> delete(@Parameter(description = "商品ID") @PathVariable Long id) {
         productService.delete(id);
         return R.ok(null, "删除成功");
@@ -61,6 +65,7 @@ public class ProductController {
      */
     @Operation(summary = "查询商品详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("product:view")
     public R<WmsProduct> getById(@Parameter(description = "商品ID") @PathVariable Long id) {
         WmsProduct product = productService.getById(id);
         return R.ok(product);
@@ -71,6 +76,7 @@ public class ProductController {
      */
     @Operation(summary = "分页查询商品列表")
     @GetMapping("/list")
+    @SaCheckPermission("product:view")
     public R<PageResult<ProductVO>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,

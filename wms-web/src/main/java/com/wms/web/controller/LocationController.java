@@ -6,6 +6,7 @@ import com.wms.model.dto.LocationDTO;
 import com.wms.model.entity.WmsLocation;
 import com.wms.model.vo.LocationVO;
 import com.wms.service.LocationService;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ public class LocationController {
      */
     @Operation(summary = "创建库位")
     @PostMapping
+    @SaCheckPermission("location:create")
     public R<WmsLocation> create(@Valid @RequestBody LocationDTO dto) {
         WmsLocation location = locationService.create(dto);
         return R.ok(location, "创建成功");
@@ -41,6 +43,7 @@ public class LocationController {
      */
     @Operation(summary = "更新库位")
     @PutMapping("/{id}")
+    @SaCheckPermission("location:edit")
     public R<WmsLocation> update(
             @Parameter(description = "库位ID") @PathVariable Long id,
             @Valid @RequestBody LocationDTO dto) {
@@ -53,6 +56,7 @@ public class LocationController {
      */
     @Operation(summary = "删除库位")
     @DeleteMapping("/{id}")
+    @SaCheckPermission("location:delete")
     public R<Void> delete(@Parameter(description = "库位ID") @PathVariable Long id) {
         locationService.delete(id);
         return R.ok(null, "删除成功");
@@ -63,6 +67,7 @@ public class LocationController {
      */
     @Operation(summary = "查询库位详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("location:view")
     public R<WmsLocation> getById(@Parameter(description = "库位ID") @PathVariable Long id) {
         WmsLocation location = locationService.getById(id);
         return R.ok(location);
@@ -73,6 +78,7 @@ public class LocationController {
      */
     @Operation(summary = "分页查询库位列表")
     @GetMapping("/list")
+    @SaCheckPermission("location:view")
     public R<PageResult<LocationVO>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
@@ -87,6 +93,7 @@ public class LocationController {
      */
     @Operation(summary = "查询仓库下的库位列表")
     @GetMapping("/warehouse/{warehouseId}")
+    @SaCheckPermission("location:view")
     public R<List<WmsLocation>> listByWarehouseId(
             @Parameter(description = "仓库ID") @PathVariable Long warehouseId) {
         List<WmsLocation> result = locationService.listByWarehouseId(warehouseId);
