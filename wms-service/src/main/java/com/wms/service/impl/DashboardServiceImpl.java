@@ -1,6 +1,7 @@
 package com.wms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.wms.dao.mapper.OrderStatsMapper;
 import com.wms.dao.mapper.*;
 import com.wms.model.entity.*;
 import com.wms.model.vo.DashboardVO;
@@ -9,84 +10,45 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * 首页服务实现类
+ * 使用SQL聚合查询，避免全量加载到内存
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements DashboardService {
 
-    private final WmsProductMapper productMapper;
-    private final WmsWarehouseMapper warehouseMapper;
+    private final OrderStatsMapper orderStatsMapper;
     private final WmsInboundOrderMapper inboundOrderMapper;
     private final WmsOutboundOrderMapper outboundOrderMapper;
-    private final WmsInventoryMapper inventoryMapper;
     private final WmsSupplierMapper supplierMapper;
     private final WmsCustomerMapper customerMapper;
+    private final WmsWarehouseMapper warehouseMapper;
 
     /**
      * 获取首页统计数据
+     * 优化：使用SQL聚合查询替代全量加载
      */
     @Override
     public DashboardVO getDashboardStats() {
-        // 1. 商品总数
-        long productCount = productMapper.selectCount(
-                new LambdaQueryWrapper<WmsProduct>().eq(WmsProduct::getIsDeleted, 0)
-        );
+        // 1. 使用SQL聚合查询获取统计数据
+        Map<String, Object> stats = orderStatsMapper.getDashboardStats();
 
-        // 2. 仓库数量
-        long warehouseCount = warehouseMapper.selectCount(
-                new LambdaQueryWrapper<WmsWarehouse>().eq(WmsWarehouse::getIsDeleted, 0)
-        );
+        long productCount = ((Number) stats.get("productCount")).longValue();
+        long warehouseCount = ((Number) stats.get("warehouseCount")).longValue();
+        long todayInboundCount = ((Number) stats.get("todayInboundCount")).longValue();
+        int todayInboundQuantity = ((Number) stats.get("todayInboundQuantity")).intValue();
+        long todayOutboundCount = ((Number) stats.get("todayOutboundCount")).longValue();
+        int todayOutboundQuantity = ((Number) stats.get("todayOutboundQuantity")).intValue();
+        long totalInventoryQuantity = ((Number) stats.get("totalInventoryQuantity")).longValue();
 
-        // 3. 今日时间范围
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
-
-        // 4. 今日入库统计
-        List<WmsInboundOrder> todayInboundOrders = inboundOrderMapper.selectList(
-                new LambdaQueryWrapper<WmsInboundOrder>()
-                        .ge(WmsInboundOrder::getGmtCreate, todayStart)
-                        .le(WmsInboundOrder::getGmtCreate, todayEnd)
-                        .eq(WmsInboundOrder::getIsDeleted, 0)
-                        .eq(WmsInboundOrder::getOrderStatus, 2)  // 已完成
-        );
-        long todayInboundCount = todayInboundOrders.size();
-        int todayInboundQuantity = todayInboundOrders.stream()
-                .mapToInt(o -> o.getTotalQuantity() != null ? o.getTotalQuantity() : 0)
-                .sum();
-
-        // 5. 今日出库统计
-        List<WmsOutboundOrder> todayOutboundOrders = outboundOrderMapper.selectList(
-                new LambdaQueryWrapper<WmsOutboundOrder>()
-                        .ge(WmsOutboundOrder::getGmtCreate, todayStart)
-                        .le(WmsOutboundOrder::getGmtCreate, todayEnd)
-                        .eq(WmsOutboundOrder::getIsDeleted, 0)
-                        .eq(WmsOutboundOrder::getOrderStatus, 2)  // 已完成
-        );
-        long todayOutboundCount = todayOutboundOrders.size();
-        int todayOutboundQuantity = todayOutboundOrders.stream()
-                .mapToInt(o -> o.getTotalQuantity() != null ? o.getTotalQuantity() : 0)
-                .sum();
-
-        // 6. 库存总量
-        List<WmsInventory> inventories = inventoryMapper.selectList(
-                new LambdaQueryWrapper<WmsInventory>().eq(WmsInventory::getIsDeleted, 0)
-        );
-        long totalInventoryQuantity = inventories.stream()
-                .mapToLong(i -> i.getQuantity() != null ? i.getQuantity() : 0)
-                .sum();
-
-        // 7. 最近入库单（最新5条）
+        // 2. 最近入库单（最新5条）
         List<WmsInboundOrder> recentInbound = inboundOrderMapper.selectList(
                 new LambdaQueryWrapper<WmsInboundOrder>()
                         .eq(WmsInboundOrder::getIsDeleted, 0)
@@ -95,7 +57,7 @@ public class DashboardServiceImpl implements DashboardService {
         );
         List<DashboardVO.RecentOrderVO> recentInboundVOs = convertToRecentInboundVO(recentInbound);
 
-        // 8. 最近出库单（最新5条）
+        // 3. 最近出库单（最新5条）
         List<WmsOutboundOrder> recentOutbound = outboundOrderMapper.selectList(
                 new LambdaQueryWrapper<WmsOutboundOrder>()
                         .eq(WmsOutboundOrder::getIsDeleted, 0)
@@ -104,7 +66,7 @@ public class DashboardServiceImpl implements DashboardService {
         );
         List<DashboardVO.RecentOrderVO> recentOutboundVOs = convertToRecentOutboundVO(recentOutbound);
 
-        // 9. 构建返回对象
+        // 4. 构建返回对象
         return DashboardVO.builder()
                 .productCount(productCount)
                 .warehouseCount(warehouseCount)
@@ -132,7 +94,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(id -> id != null)
                 .distinct()
                 .collect(Collectors.toList());
-        java.util.Map<Long, WmsSupplier> supplierMap = supplierIds.isEmpty() ? java.util.Map.of() :
+        Map<Long, WmsSupplier> supplierMap = supplierIds.isEmpty() ? Map.of() :
                 supplierMapper.selectBatchIds(supplierIds).stream()
                         .collect(Collectors.toMap(WmsSupplier::getId, s -> s));
 
@@ -141,7 +103,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(WmsInboundOrder::getWarehouseId)
                 .distinct()
                 .collect(Collectors.toList());
-        java.util.Map<Long, WmsWarehouse> warehouseMap = warehouseMapper.selectBatchIds(warehouseIds).stream()
+        Map<Long, WmsWarehouse> warehouseMap = warehouseMapper.selectBatchIds(warehouseIds).stream()
                 .collect(Collectors.toMap(WmsWarehouse::getId, w -> w));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -188,7 +150,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(id -> id != null)
                 .distinct()
                 .collect(Collectors.toList());
-        java.util.Map<Long, WmsCustomer> customerMap = customerIds.isEmpty() ? java.util.Map.of() :
+        Map<Long, WmsCustomer> customerMap = customerIds.isEmpty() ? Map.of() :
                 customerMapper.selectBatchIds(customerIds).stream()
                         .collect(Collectors.toMap(WmsCustomer::getId, c -> c));
 
@@ -197,7 +159,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(WmsOutboundOrder::getWarehouseId)
                 .distinct()
                 .collect(Collectors.toList());
-        java.util.Map<Long, WmsWarehouse> warehouseMap = warehouseMapper.selectBatchIds(warehouseIds).stream()
+        Map<Long, WmsWarehouse> warehouseMap = warehouseMapper.selectBatchIds(warehouseIds).stream()
                 .collect(Collectors.toMap(WmsWarehouse::getId, w -> w));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

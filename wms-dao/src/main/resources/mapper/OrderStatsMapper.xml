@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wms.dao.mapper.OrderStatsMapper">
+
+    <!-- 获取订单统计（使用SQL聚合） -->
+    <select id="getOrderStats" resultType="com.wms.model.vo.OrderStatsVO">
+        SELECT
+            -- 入库统计
+            (SELECT COUNT(*) FROM wms_inbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS inboundCount,
+            (SELECT COUNT(*) FROM wms_inbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0 AND order_status = 0) AS inboundPendingCount,
+            (SELECT COUNT(*) FROM wms_inbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0 AND order_status = 2) AS inboundCompletedCount,
+            (SELECT COALESCE(SUM(total_quantity), 0) FROM wms_inbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS inboundTotalQuantity,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM wms_inbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS inboundTotalAmount,
+            -- 出库统计
+            (SELECT COUNT(*) FROM wms_outbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS outboundCount,
+            (SELECT COUNT(*) FROM wms_outbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0 AND order_status = 0) AS outboundPendingCount,
+            (SELECT COUNT(*) FROM wms_outbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0 AND order_status = 2) AS outboundCompletedCount,
+            (SELECT COALESCE(SUM(total_quantity), 0) FROM wms_outbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS outboundTotalQuantity,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM wms_outbound_order
+             WHERE gmt_create &gt;= #{startTime} AND gmt_create &lt;= #{endTime} AND is_deleted = 0) AS outboundTotalAmount,
+            -- 今日统计
+            (SELECT COUNT(*) FROM wms_inbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND is_deleted = 0) AS todayInbound,
+            (SELECT COUNT(*) FROM wms_outbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY) AND is_deleted = 0) AS todayOutbound,
+            -- 库存总量
+            (SELECT COALESCE(SUM(quantity), 0) FROM wms_inventory WHERE is_deleted = 0) AS totalInventory
+    </select>
+
+    <!-- 获取仪表盘统计（使用SQL聚合） -->
+    <select id="getDashboardStats" resultType="java.util.LinkedHashMap">
+        SELECT
+            -- 商品总数
+            (SELECT COUNT(*) FROM wms_product WHERE is_deleted = 0) AS productCount,
+            -- 仓库数量
+            (SELECT COUNT(*) FROM wms_warehouse WHERE is_deleted = 0) AS warehouseCount,
+            -- 今日入库统计
+            (SELECT COUNT(*) FROM wms_inbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+             AND is_deleted = 0 AND order_status = 2) AS todayInboundCount,
+            (SELECT COALESCE(SUM(total_quantity), 0) FROM wms_inbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+             AND is_deleted = 0 AND order_status = 2) AS todayInboundQuantity,
+            -- 今日出库统计
+            (SELECT COUNT(*) FROM wms_outbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+             AND is_deleted = 0 AND order_status = 2) AS todayOutboundCount,
+            (SELECT COALESCE(SUM(total_quantity), 0) FROM wms_outbound_order
+             WHERE gmt_create &gt;= CURDATE() AND gmt_create &lt; DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+             AND is_deleted = 0 AND order_status = 2) AS todayOutboundQuantity,
+            -- 库存总量
+            (SELECT COALESCE(SUM(quantity), 0) FROM wms_inventory WHERE is_deleted = 0) AS totalInventoryQuantity
+    </select>
+
+    <!-- 获取每日入库统计（使用SQL GROUP BY） -->
+    <select id="getDailyInboundStats" resultType="java.util.LinkedHashMap">
+        SELECT
+            DATE(gmt_create) AS date,
+            COALESCE(SUM(total_quantity), 0) AS count
+        FROM wms_inbound_order
+        WHERE gmt_create &gt;= #{startTime}
+          AND gmt_create &lt;= #{endTime}
+          AND is_deleted = 0
+          AND order_status = 2
+        GROUP BY DATE(gmt_create)
+        ORDER BY DATE(gmt_create)
+    </select>
+
+    <!-- 获取每日出库统计（使用SQL GROUP BY） -->
+    <select id="getDailyOutboundStats" resultType="java.util.LinkedHashMap">
+        SELECT
+            DATE(gmt_create) AS date,
+            COALESCE(SUM(total_quantity), 0) AS count
+        FROM wms_outbound_order
+        WHERE gmt_create &gt;= #{startTime}
+          AND gmt_create &lt;= #{endTime}
+          AND is_deleted = 0
+          AND order_status = 2
+        GROUP BY DATE(gmt_create)
+        ORDER BY DATE(gmt_create)
+    </select>
+
+    <!-- 获取商品入库排行（使用SQL JOIN + GROUP BY） -->
+    <select id="getProductInboundRank" resultType="java.util.LinkedHashMap">
+        SELECT
+            p.product_name AS productName,
+            COALESCE(SUM(i.quantity), 0) AS quantity
+        FROM wms_inbound_order_item i
+        INNER JOIN wms_inbound_order o ON i.order_id = o.id
+        INNER JOIN wms_product p ON i.product_id = p.id
+        WHERE o.gmt_create &gt;= #{startTime}
+          AND o.gmt_create &lt;= #{endTime}
+          AND o.is_deleted = 0
+          AND i.is_deleted = 0
+          AND o.order_status = 2
+        GROUP BY i.product_id, p.product_name
+        ORDER BY quantity DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取商品出库排行（使用SQL JOIN + GROUP BY） -->
+    <select id="getProductOutboundRank" resultType="java.util.LinkedHashMap">
+        SELECT
+            p.product_name AS productName,
+            COALESCE(SUM(i.quantity), 0) AS quantity
+        FROM wms_outbound_order_item i
+        INNER JOIN wms_outbound_order o ON i.order_id = o.id
+        INNER JOIN wms_product p ON i.product_id = p.id
+        WHERE o.gmt_create &gt;= #{startTime}
+          AND o.gmt_create &lt;= #{endTime}
+          AND o.is_deleted = 0
+          AND i.is_deleted = 0
+          AND o.order_status = 2
+        GROUP BY i.product_id, p.product_name
+        ORDER BY quantity DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
