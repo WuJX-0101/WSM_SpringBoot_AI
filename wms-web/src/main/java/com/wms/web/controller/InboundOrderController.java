@@ -1,5 +1,6 @@
 package com.wms.web.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.wms.common.core.PageResult;
 import com.wms.common.core.R;
 import com.wms.model.dto.InboundOrderDTO;
@@ -29,6 +30,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "创建入库单")
     @PostMapping
+    @SaCheckPermission("inbound:create")
     public R<WmsInboundOrder> create(@Valid @RequestBody InboundOrderDTO dto) {
         WmsInboundOrder order = inboundOrderService.create(dto);
         return R.ok(order, "创建成功");
@@ -39,6 +41,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "审核入库单")
     @PutMapping("/{id}/audit")
+    @SaCheckPermission("inbound:audit")
     public R<Void> audit(@Parameter(description = "入库单ID") @PathVariable Long id) {
         inboundOrderService.audit(id);
         return R.ok(null, "审核成功");
@@ -49,6 +52,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "执行入库")
     @PutMapping("/{id}/execute")
+    @SaCheckPermission("inbound:execute")
     public R<Void> execute(@Parameter(description = "入库单ID") @PathVariable Long id) {
         inboundOrderService.execute(id);
         return R.ok(null, "入库成功");
@@ -59,6 +63,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "取消入库单")
     @PutMapping("/{id}/cancel")
+    @SaCheckPermission("inbound:cancel")
     public R<Void> cancel(@Parameter(description = "入库单ID") @PathVariable Long id) {
         inboundOrderService.cancel(id);
         return R.ok(null, "取消成功");
@@ -69,6 +74,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "查询入库单详情")
     @GetMapping("/{id}")
+    @SaCheckPermission("inbound:view")
     public R<InboundOrderVO> getById(@Parameter(description = "入库单ID") @PathVariable Long id) {
         InboundOrderVO order = inboundOrderService.getById(id);
         return R.ok(order);
@@ -79,6 +85,7 @@ public class InboundOrderController {
      */
     @Operation(summary = "分页查询入库单列表")
     @GetMapping("/list")
+    @SaCheckPermission("inbound:list")
     public R<PageResult<InboundOrderVO>> list(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") int size,
