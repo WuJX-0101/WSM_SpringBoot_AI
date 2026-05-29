@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-// 创建axios实例
+// 创建axios实例，使用环境变量配置baseURL
 const request = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'

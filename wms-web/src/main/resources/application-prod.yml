@@ -1,0 +1,12 @@
+# 生产环境配置
+spring:
+  # Knife4j API文档禁用
+  knife4j:
+    enable: false
+
+# 生产环境日志级别
+logging:
+  level:
+    root: INFO
+    com.wms: INFO
+    org.springframework.ai: INFO

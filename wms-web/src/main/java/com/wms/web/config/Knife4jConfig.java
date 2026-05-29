@@ -7,8 +7,14 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
+/**
+ * Knife4j API文档配置
+ * 仅在开发环境(dev)启用，生产环境(prod)禁用
+ */
 @Configuration
+@Profile("dev")
 public class Knife4jConfig {
 
     @Bean

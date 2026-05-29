@@ -19,11 +19,13 @@ import com.wms.model.vo.UserVO;
 import com.wms.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -32,51 +34,82 @@ public class AuthServiceImpl implements AuthService {
 
     private final SysUserMapper sysUserMapper;
     private final SysUserRoleMapper sysUserRoleMapper;
+    private final StringRedisTemplate stringRedisTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    /** 登录失败计数Key前缀 */
+    private static final String LOGIN_FAIL_KEY = "login:fail:";
+    /** 注册限流Key前缀 */
+    private static final String REGISTER_LIMIT_KEY = "register:limit:";
+    /** 最大登录失败次数 */
+    private static final int MAX_LOGIN_FAIL = 5;
+    /** 登录失败锁定时间（分钟） */
+    private static final int LOGIN_LOCK_MINUTES = 15;
+    /** 每小时最大注册次数 */
+    private static final int MAX_REGISTER_PER_HOUR = 3;
 
     /**
      * 用户登录
-     * 
+     *
      * 流程:
-     * 1. 根据用户名查询用户（排除已删除的用户）
-     * 2. 验证用户状态（是否被禁用）
-     * 3. 使用BCrypt验证密码
-     * 4. 调用Sa-Token生成Token
-     * 5. 查询用户角色和权限
-     * 6. 构建登录响应（包含Token和用户信息）
+     * 1. 检查账号是否被锁定（连续5次失败锁定15分钟）
+     * 2. 根据用户名查询用户（排除已删除的用户）
+     * 3. 验证用户状态（是否被禁用）
+     * 4. 使用BCrypt验证密码
+     * 5. 清除登录失败计数
+     * 6. 调用Sa-Token生成Token
+     * 7. 查询用户角色和权限
+     * 8. 构建登录响应（包含Token和用户信息）
      */
     @Override
     public LoginVO login(LoginDTO loginDTO) {
-        // 1. 查询用户（LambdaQueryWrapper是MyBatis-Plus的条件构造器）
+        String username = loginDTO.getUsername();
+        String failKey = LOGIN_FAIL_KEY + username;
+
+        // 1. 检查账号是否被锁定
+        String failCountStr = stringRedisTemplate.opsForValue().get(failKey);
+        if (failCountStr != null) {
+            int failCount = Integer.parseInt(failCountStr);
+            if (failCount >= MAX_LOGIN_FAIL) {
+                throw new BusinessException("账号已锁定，请" + LOGIN_LOCK_MINUTES + "分钟后重试");
+            }
+        }
+
+        // 2. 查询用户（LambdaQueryWrapper是MyBatis-Plus的条件构造器）
         SysUser user = sysUserMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, loginDTO.getUsername())
+                        .eq(SysUser::getUsername, username)
                         .eq(SysUser::getIsDeleted, 0)  // 逻辑删除过滤
         );
 
         if (user == null) {
+            incrementLoginFail(failKey);
             throw new BusinessException("用户不存在");
         }
 
-        // 2. 验证用户状态
+        // 3. 验证用户状态
         if (user.getStatus() == 0) {
             throw new BusinessException("用户已被禁用");
         }
 
-        // 3. BCrypt密码验证（passwordEncoder.matches会自动处理盐值）
+        // 4. BCrypt密码验证（passwordEncoder.matches会自动处理盐值）
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            incrementLoginFail(failKey);
             throw new BusinessException("密码错误");
         }
 
-        // 4. Sa-Token登录（生成Token并存储到Redis）
+        // 5. 登录成功，清除失败计数
+        stringRedisTemplate.delete(failKey);
+
+        // 6. Sa-Token登录（生成Token并存储到Redis）
         StpUtil.login(user.getId());
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
 
-        // 5. 查询用户角色和权限（用于前端按钮级别权限控制）
+        // 7. 查询用户角色和权限（用于前端按钮级别权限控制）
         List<String> roles = sysUserMapper.selectRoleCodesByUserId(user.getId());
         List<String> permissions = sysUserMapper.selectPermissionsByUserId(user.getId());
 
-        // 6. 构建用户信息VO
+        // 8. 构建用户信息VO
         UserVO userVO = UserVO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -90,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
                 .permissions(permissions)
                 .build();
 
-        // 7. 构建登录响应（Token + 用户信息）
+        // 9. 构建登录响应（Token + 用户信息）
         return LoginVO.builder()
                 .accessToken(tokenInfo.getTokenValue())
                 .tokenType("Bearer")
@@ -100,19 +133,43 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
+     * 增加登录失败计数
+     *
+     * @param failKey Redis Key
+     */
+    private void incrementLoginFail(String failKey) {
+        Long count = stringRedisTemplate.opsForValue().increment(failKey);
+        if (count != null && count == 1) {
+            // 首次失败，设置过期时间
+            stringRedisTemplate.expire(failKey, LOGIN_LOCK_MINUTES, TimeUnit.MINUTES);
+        }
+    }
+
+    /**
      * 用户注册
-     * 
+     *
      * 流程:
-     * 1. 检查用户名是否已存在
-     * 2. 使用BCrypt加密密码（自动加盐）
-     * 3. 插入用户记录
-     * 
+     * 1. 检查注册限流（同一IP每小时最多注册3次）
+     * 2. 检查用户名是否已存在
+     * 3. 使用BCrypt加密密码（自动加盐）
+     * 4. 插入用户记录
+     *
      * @Transactional(rollbackFor = Exception.class) 表示任何异常都回滚事务
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void register(RegisterDTO registerDTO) {
-        // 1. 检查用户名唯一性
+        // 1. 检查注册限流（使用用户名作为限流Key，简化实现）
+        String limitKey = REGISTER_LIMIT_KEY + registerDTO.getUsername();
+        String countStr = stringRedisTemplate.opsForValue().get(limitKey);
+        if (countStr != null) {
+            int count = Integer.parseInt(countStr);
+            if (count >= MAX_REGISTER_PER_HOUR) {
+                throw new BusinessException("注册次数过多，请稍后再试");
+            }
+        }
+
+        // 2. 检查用户名唯一性
         SysUser existUser = sysUserMapper.selectOne(
                 new LambdaQueryWrapper<SysUser>()
                         .eq(SysUser::getUsername, registerDTO.getUsername())
@@ -122,7 +179,7 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名已存在");
         }
 
-        // 2. 构建用户实体
+        // 3. 构建用户实体
         SysUser user = new SysUser();
         user.setUsername(registerDTO.getUsername());
         // BCrypt加密密码（每次加密结果不同，因为盐值随机）
@@ -132,8 +189,15 @@ public class AuthServiceImpl implements AuthService {
         user.setPhone(registerDTO.getPhone());
         user.setStatus(1);  // 默认启用状态
 
-        // 3. 插入数据库
+        // 4. 插入数据库
         sysUserMapper.insert(user);
+
+        // 5. 增加注册计数
+        Long newCount = stringRedisTemplate.opsForValue().increment(limitKey);
+        if (newCount != null && newCount == 1) {
+            stringRedisTemplate.expire(limitKey, 1, TimeUnit.HOURS);
+        }
+
         log.info("用户注册成功: {}", user.getUsername());
     }
 

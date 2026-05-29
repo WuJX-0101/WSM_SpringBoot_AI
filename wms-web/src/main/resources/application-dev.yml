@@ -1,0 +1,12 @@
+# 开发环境配置
+spring:
+  # Knife4j API文档启用
+  knife4j:
+    enable: true
+
+# 开发环境日志级别
+logging:
+  level:
+    root: INFO
+    com.wms: DEBUG
+    org.springframework.ai: DEBUG
