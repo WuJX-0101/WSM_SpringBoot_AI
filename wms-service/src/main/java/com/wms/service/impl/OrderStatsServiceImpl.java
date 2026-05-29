@@ -3,8 +3,10 @@ package com.wms.service.impl;
 import com.wms.dao.mapper.OrderStatsMapper;
 import com.wms.model.vo.OrderStatsVO;
 import com.wms.service.OrderStatsService;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,8 +29,10 @@ public class OrderStatsServiceImpl implements OrderStatsService {
     /**
      * 获取订单统计数据
      * 优化：使用SQL聚合查询替代全量加载
+     * 缓存：结果缓存5分钟
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_ORDER_STATS, key = "#startDate + ':' + #endDate")
     public OrderStatsVO getStats(LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);

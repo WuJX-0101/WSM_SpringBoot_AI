@@ -6,8 +6,10 @@ import com.wms.dao.mapper.*;
 import com.wms.model.entity.*;
 import com.wms.model.vo.DashboardVO;
 import com.wms.service.DashboardService;
+import com.wms.service.config.CacheConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
@@ -34,8 +36,10 @@ public class DashboardServiceImpl implements DashboardService {
     /**
      * 获取首页统计数据
      * 优化：使用SQL聚合查询替代全量加载
+     * 缓存：结果缓存5分钟，避免频繁查询数据库
      */
     @Override
+    @Cacheable(value = CacheConfig.CACHE_DASHBOARD, key = "'stats'")
     public DashboardVO getDashboardStats() {
         // 1. 使用SQL聚合查询获取统计数据
         Map<String, Object> stats = orderStatsMapper.getDashboardStats();
